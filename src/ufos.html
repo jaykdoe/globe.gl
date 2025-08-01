@@ -1,0 +1,55 @@
+<head>
+  <style> body { margin: 0; } </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
+  <script src="../../globe.gl/dist/globe.gl.js"></script>
+</head>
+
+<body>
+  <div id="globeViz"></div>
+
+  <script type="module">
+    import { scaleOrdinal } from 'https://esm.sh/d3-scale';
+    import { schemeCategory10 } from 'https://esm.sh/d3-scale-chromatic';
+    import { transparentize } from 'https://esm.sh/polished';
+
+    const catColor = scaleOrdinal(schemeCategory10.map(col => transparentize(0.2, col)));
+
+    const getAlt = d => d.AbsoluteDayTime * 5e-5;
+
+    const getTooltip = d => `
+      <div style="text-align: center">
+        <div><b>${d.Duration}</b>, ${d.Date}</div>
+        <div>${d.City}, ${d.State}, ${d.Country}</div>
+        <div style={{color: ${catColor(d.Shape)}}}>Shape: <em>${d.Shape}</em></div>
+        <div>Report: <em>${d.Report}</em></div>
+      </div>
+    `;
+
+    const myGlobe = new Globe(document.getElementById('globeViz'))
+      .globeImageUrl('//cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg')
+      .backgroundImageUrl('//cdn.jsdelivr.net/npm/three-globe/example/img/night-sky.png')
+      .pointLat('Latitude')
+      .pointLng('Longitude')
+      .pointAltitude(getAlt)
+      .pointRadius(0.03)
+      .pointColor(d => catColor(d.Shape))
+      .pointLabel(getTooltip)
+      .labelLat('Latitude')
+      .labelLng('Longitude')
+      .labelAltitude(d => getAlt(d))
+      .labelDotRadius(0.03)
+      .labelDotOrientation(() => 'bottom')
+      .labelColor(d => catColor(d.Shape))
+      .labelText('Report' + ' ' + 'Date' + ', ' + 'City' + ', ' + 'State' + ' ' + 'Country' + ' [' + 'Duration' + '] ' + 'Shape')
+      .labelSize(0.15)
+      .labelResolution(1)
+      .labelLabel(getTooltip);
+
+    fetch('./ufos-cleaned.json').then(res => res.json()).then(ufos => {
+      myGlobe.pointsData(ufos)
+        .labelsData(ufos);
+    });
+
+  </script>
+</body>
